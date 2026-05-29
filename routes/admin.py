@@ -16,9 +16,9 @@ def admin_dashboard():
     try:
         db = get_db()
 
-        # Fetching user metrics joined with their respective 10% savings account state
+        # MODIFIED: Added u.email to the select matrix to accommodate dual identity metrics
         query = """
-            SELECT u.id, u.name, u.phone, u.role, u.created_at, s.balance 
+            SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at, s.balance 
             FROM users u
             LEFT JOIN savings_accounts s ON u.id = s.user_id
             ORDER BY u.created_at DESC
@@ -76,4 +76,4 @@ def update_user_status(user_id):
         current_app.logger.error(f"RBAC Mutation Failure for User ID {user_id}: {str(e)}")
         flash("Failed to update target user authorization level.", "danger")
     
-    return redirect(url_for('admin.admin_dashboard'))
+    return redirect(url_for('admin.admin_dashboard'))    return redirect(url_for('admin.admin_dashboard'))
