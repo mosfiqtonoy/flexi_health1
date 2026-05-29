@@ -1,20 +1,19 @@
 -- ==========================================================
 -- Flexi Health Production Database Schema
--- Optimized for Flask + SQLite3 Architecture
 -- ==========================================================
 
--- 1. Users Table: Centralized identity repository
+-- 1. Users Table
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     phone TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    role TEXT DEFAULT 'user', -- 'user' or 'admin'
+    role TEXT DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Savings Accounts Table: Micro-savings ledger linked to users
+-- 2. Savings Accounts Table
 CREATE TABLE IF NOT EXISTS savings_accounts (
     user_id INTEGER PRIMARY KEY,
     balance REAL DEFAULT 0.0,
@@ -22,31 +21,52 @@ CREATE TABLE IF NOT EXISTS savings_accounts (
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 3. Transactions Table: Audit trail for all financial activity
+-- 3. Transactions Table
 CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     amount REAL NOT NULL,
-    transaction_type TEXT NOT NULL, -- 'recharge', 'service_fee', etc.
+    transaction_type TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 4. Healthcare Providers Table: Emergency directory system
+-- 4. Healthcare Providers Table (Hospitals/Ambulance/Blood Banks)
 CREATE TABLE IF NOT EXISTS healthcare_providers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    category TEXT NOT NULL, -- 'Hospital', 'Ambulance', 'Blood Donor'
+    category TEXT NOT NULL, -- 'Hospital', 'Ambulance', 'Blood Bank'
     type TEXT, -- 'Government', 'Private'
     zilla TEXT NOT NULL,
     city TEXT NOT NULL,
     reception_number TEXT NOT NULL,
     latitude REAL,
-    longitude REAL,
-    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    longitude REAL
 );
 
--- Creating Indices for Faster Searches
-CREATE INDEX IF NOT EXISTS idx_location ON healthcare_providers (zilla, city);
-CREATE INDEX IF NOT EXISTS idx_user_email ON users (email);
-CREATE INDEX IF NOT EXISTS idx_user_phone ON users (phone);
+-- 5. Doctors Table
+CREATE TABLE IF NOT EXISTS doctors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    specialization TEXT NOT NULL,
+    hospital_name TEXT,
+    zilla TEXT NOT NULL,
+    city TEXT NOT NULL,
+    phone TEXT NOT NULL
+);
+
+-- 6. Blood Donors Table
+CREATE TABLE IF NOT EXISTS blood_donors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    blood_group TEXT NOT NULL, -- A+, B+, O+, AB+ ইত্যাদি
+    zilla TEXT NOT NULL,
+    city TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    last_donated DATE
+);
+
+-- Indexes for lightning-fast search
+CREATE INDEX IF NOT EXISTS idx_healthcare_loc ON healthcare_providers (zilla, city);
+CREATE INDEX IF NOT EXISTS idx_doctor_search ON doctors (specialization, zilla, city);
+CREATE INDEX IF NOT EXISTS idx_blood_donor_search ON blood_donors (blood_group, zilla, city);one ON users (phone);
