@@ -75,5 +75,5 @@ def update_user_status(user_id):
     except Exception as e:
         current_app.logger.error(f"RBAC Mutation Failure for User ID {user_id}: {str(e)}")
         flash("Failed to update target user authorization level.", "danger")
-    
-    return redirect(url_for('admin.admin_dashboard'))    return redirect(url_for('admin.admin_dashboard'))
+
+    return redirect(url_for('admin.admin_dashboard'))
