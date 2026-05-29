@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div>
+            <h1 class="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                <span class="p-2 bg-green-500/10 rounded-lg text-green-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </span>
+                Administrative Control Matrix
+            </h1>
+            <p class="text-gray-400 mt-1">High-level telemetry and system liquidity overview</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/admin/requests" class="px-4 py-2 bg-gray-900 border border-gray-800 rounded-xl text-xs font-bold text-gray-300 hover:border-green-500 transition-all uppercase tracking-widest">
+                Service Dispatch Tickers
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Registered Profiles</p>
+            <h3 class="text-4xl font-black text-white mt-2">{{ total_users }}</h3>
+            <p class="text-[10px] text-blue-400 mt-2 font-medium tracking-tighter">● LIVE DATABASE STREAM ACTIVE</p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-green-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Total System Savings</p>
+            <h3 class="text-4xl font-black text-green-400 mt-2">৳ {{ "{:,.2f}".format(total_savings) }}</h3>
+            <p class="text-[10px] text-green-500/60 mt-2 font-medium tracking-tighter">NET RECHARGE ACCUMULATION (10%)</p>
+        </div>
+
+        <div class="bg-gray-900 border border-gray-800 p-6 rounded-3xl relative overflow-hidden group">
+            <div class="absolute -right-8 -bottom-8 w-24 h-24 bg-purple-500/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">System Latency</p>
+            <h3 class="text-4xl font-black text-white mt-2">24 <span class="text-sm text-gray-600">ms</span></h3>
+            <p class="text-[10px] text-purple-400 mt-2 font-medium tracking-tighter">SECURE ENCRYPTED CHANNEL</p>
+        </div>
+    </div>
+
+    <div class="bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden shadow-2xl">
+        <div class="px-8 py-6 border-b border-gray-800 bg-gray-900/50 flex justify-between items-center">
+            <h2 class="text-sm font-bold text-white uppercase tracking-widest">Global User Directory</h2>
+            <span class="px-3 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded-full">ACTIVE NODE</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-950/50">
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800">User Identity</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800">SIM/Phone</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800">Account Role</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-gray-800 text-right">Savings Balance</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800/50">
+                    {% for user in users %}
+                    <tr class="hover:bg-gray-800/30 transition-colors group">
+                        <td class="px-8 py-5">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-gray-200 group-hover:text-green-400 transition-colors">{{ user.name }}</span>
+                                <span class="text-[10px] text-gray-600">{{ user.email }}</span>
+                            </div>
+                        </td>
+                        <td class="px-8 py-5 text-xs font-mono text-gray-400">{{ user.phone }}</td>
+                        <td class="px-8 py-5">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter 
+                                {% if user.role == 'admin' %} bg-purple-500/10 text-purple-400 {% else %} bg-blue-500/10 text-blue-400 {% endif %}">
+                                {{ user.role }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-right font-bold text-white text-sm">
+                            ৳ {{ "{:,.2f}".format(user.balance or 0) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
