@@ -77,9 +77,20 @@ CREATE TABLE IF NOT EXISTS service_requests (
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 8. Password Reset Tokens Table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used INTEGER DEFAULT 0,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_healthcare_loc ON healthcare_providers (zilla, city);
 CREATE INDEX IF NOT EXISTS idx_doctor_search ON doctors (specialization, zilla, city);
 CREATE INDEX IF NOT EXISTS idx_blood_donor_search ON blood_donors (blood_group, zilla, city);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users (phone);
 CREATE INDEX IF NOT EXISTS idx_service_requests ON service_requests (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens ON password_reset_tokens (token);
