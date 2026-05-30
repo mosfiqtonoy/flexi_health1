@@ -1,33 +1,26 @@
-# utils/db.py
-import sqlite3
+
+        import sqlite3
+import os
 from flask import g, current_app
 
 def get_db():
     if "db" not in g:
-        db_path = current_app.config.get("DATABASE", "users.db")
+        db_path = current_app.config.get("DATABASE", "flexi_health.db")
         g.db = sqlite3.connect(db_path)
         g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
-
 
 def close_db(e=None):
     db = g.pop("db", None)
     if db:
         db.close()
 
-
 def init_db(app):
     app.teardown_appcontext(close_db)
-
     with app.app_context():
         db = get_db()
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT,
-                email TEXT UNIQUE,
-                password TEXT,
-                role TEXT DEFAULT 'user'
-            )
-        """)
+        schema_path = os.path.join(app.root_path, "schema.sql")
+        with open(schema_path, "r") as f:
+            db.executescript(f.read())
         db.commit()
