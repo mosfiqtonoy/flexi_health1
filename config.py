@@ -5,7 +5,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "hero_default_77x_shield")
-    DATABASE = os.environ.get("DATABASE_URL", os.path.join(BASE_DIR, "flexi_health.db"))
+    DATABASE = os.environ.get("DATABASE_URL", "/tmp/flexi_health.db")
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = False
@@ -30,5 +30,3 @@ config_dict = {
     'dev': DevelopmentConfig,
     'prod': ProductionConfig,
     'test': TestingConfig,
-    'default': DevelopmentConfig
-}
