@@ -66,8 +66,20 @@ CREATE TABLE IF NOT EXISTS blood_donors (
     last_donated DATE
 );
 
+-- 7. Service Requests Table
+CREATE TABLE IF NOT EXISTS service_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    service_type TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_healthcare_loc ON healthcare_providers (zilla, city);
 CREATE INDEX IF NOT EXISTS idx_doctor_search ON doctors (specialization, zilla, city);
 CREATE INDEX IF NOT EXISTS idx_blood_donor_search ON blood_donors (blood_group, zilla, city);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users (phone);
+CREATE INDEX IF NOT EXISTS idx_service_requests ON service_requests (status, created_at);
