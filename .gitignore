@@ -1,24 +1,24 @@
-# Cache folders (Generated automatically by Python)
+# Cache folders
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Local Virtual Environments
+# Virtual Environments
 venv/
 env/
 .venv/
 ENV/
 
-# Application Secrets & Credentials (NEVER upload this)
+# Secrets
 .env
 .env.local
 
-# Local Databases and dynamic instances
-users.db
+# Databases
+*.db
 *.db-journal
 
-# IDE Specific files
+# IDE
 .vscode/
 .idea/
 .DS_Store
