@@ -30,3 +30,5 @@ config_dict = {
     'dev': DevelopmentConfig,
     'prod': ProductionConfig,
     'test': TestingConfig,
+    'default': DevelopmentConfig
+}
