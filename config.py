@@ -10,6 +10,8 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'
+    SSLCOMMERZ_STORE_ID = os.environ.get("SSLCOMMERZ_STORE_ID", "teststore")
+    SSLCOMMERZ_STORE_PASSWORD = os.environ.get("SSLCOMMERZ_STORE_PASSWORD", "testpass")
 
 class DevelopmentConfig(Config):
     DEBUG = True
