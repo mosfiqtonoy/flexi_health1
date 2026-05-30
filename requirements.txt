@@ -3,4 +3,4 @@ Werkzeug==3.0.1
 gunicorn==21.2.0
 python-dotenv==1.0.1
 requests==2.31.0
-Flask
+Flask-Mail==0.10.0
