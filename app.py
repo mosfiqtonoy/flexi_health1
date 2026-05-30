@@ -1,30 +1,43 @@
 import logging
 from flask import Flask, redirect, url_for, session, render_template
+
 from config import Config
 from utils.db import init_db
+
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.admin import admin_bp
 from routes.payment import payment_bp
 
+
+# ---------------- LOGGING ----------------
 def configure_logging():
     logging.basicConfig(
         level=logging.INFO,
         format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
     )
 
+
+# ---------------- APP FACTORY ----------------
 def create_app():
     app = Flask(__name__)
-    
+
+    # config
     app.config.from_object(Config)
+
+    # logging
     configure_logging()
+
+    # database init
     init_db(app)
 
+    # blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(payment_bp, url_prefix='/payment')
 
+    # ---------------- ROUTES ----------------
     @app.route('/')
     def home():
         if 'user_id' in session:
@@ -33,6 +46,7 @@ def create_app():
             return redirect(url_for('dashboard.user_dashboard'))
         return redirect(url_for('auth.login'))
 
+    # ---------------- ERROR HANDLERS ----------------
     @app.errorhandler(404)
     def page_not_found(e):
         app.logger.warning(f"404 Error: {e}")
@@ -48,6 +62,7 @@ def create_app():
         app.logger.warning(f"403 Error: {e}")
         return render_template("errors/403.html"), 403
 
+    # ---------------- SECURITY HEADERS ----------------
     @app.after_request
     def inject_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -58,7 +73,11 @@ def create_app():
 
     return app
 
+
+# create app instance
 app = create_app()
 
+
+# ---------------- RUN (LOCAL ONLY) ----------------
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
