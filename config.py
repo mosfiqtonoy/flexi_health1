@@ -1,3 +1,5 @@
+# config.py
+
 import os
 from datetime import timedelta
 
@@ -12,6 +14,14 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     SSLCOMMERZ_STORE_ID = os.environ.get("SSLCOMMERZ_STORE_ID", "teststore")
     SSLCOMMERZ_STORE_PASSWORD = os.environ.get("SSLCOMMERZ_STORE_PASSWORD", "testpass")
+
+    # Gmail SMTP
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME")
 
 class DevelopmentConfig(Config):
     DEBUG = True
