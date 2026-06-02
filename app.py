@@ -1,14 +1,13 @@
 from flask import Flask, render_template
 from config import Config
-from db import init_db   # adjust if needed
+from utils.db import init_db
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # DB INIT (safe)
-    with app.app_context():
-        init_db(app)
+    # DB INIT
+    init_db(app)
 
     # Blueprints
     from routes.auth import auth_bp
