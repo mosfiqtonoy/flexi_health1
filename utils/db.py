@@ -3,52 +3,50 @@ import os
 from flask import g, current_app
 
 
-# -------------------------------
+# =========================
 # DATABASE CONNECTION
-# -------------------------------
+# =========================
 def get_db():
     if "db" not in g:
-        db_path = current_app.config.get("DATABASE", "flexi_health.db")
-
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-
-        g.db = conn
+        try:
+            g.db = sqlite3.connect(
+                current_app.config["DATABASE"],
+                detect_types=sqlite3.PARSE_DECLTYPES
+            )
+            g.db.row_factory = sqlite3.Row
+        except Exception as e:
+            raise Exception(f"Database connection failed: {e}")
 
     return g.db
 
 
-# -------------------------------
-# CLOSE DATABASE CONNECTION
-# -------------------------------
+# =========================
+# CLOSE CONNECTION
+# =========================
 def close_db(e=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
 
 
-# -------------------------------
-# INITIALIZE DATABASE
-# -------------------------------
+# =========================
+# INIT DATABASE
+# =========================
 def init_db(app):
     app.teardown_appcontext(close_db)
 
-    schema_path = os.path.join(app.root_path, "schema.sql")
+    with app.app_context():
+        db = get_db()
 
-    if not os.path.exists(schema_path):
-        print("❌ schema.sql not found at:", schema_path)
-        return
+        schema_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "schema.sql"
+        )
 
-    try:
-        db_path = app.config.get("DATABASE", "flexi_health.db")
+        if not os.path.exists(schema_path):
+            raise FileNotFoundError("schema.sql not found")
 
-        # safe initialization
-        with sqlite3.connect(db_path) as db:
-            with open(schema_path, "r", encoding="utf-8") as f:
-                db.executescript(f.read())
+        with open(schema_path, "r", encoding="utf-8") as f:
+            db.executescript(f.read())
 
-        print("✅ Database initialized successfully")
-
-    except Exception as e:
-        print("❌ DB INIT ERROR:", str(e))
+        db.commit()
