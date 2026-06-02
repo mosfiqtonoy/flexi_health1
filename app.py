@@ -6,8 +6,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # DB INIT
-    init_db(app)
+    # DB INIT (SAFE)
+    with app.app_context():
+        init_db(app)
 
     # Blueprints
     from routes.auth import auth_bp
