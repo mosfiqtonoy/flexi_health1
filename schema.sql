@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     balance INTEGER NOT NULL DEFAULT 0,
     is_active INTEGER NOT NULL DEFAULT 1,
 
-    -- ===== Extended Profile =====
+    -- profile
     date_of_birth TEXT,
     blood_group TEXT,
     address TEXT,
@@ -23,13 +23,12 @@ CREATE TABLE IF NOT EXISTS users (
     latitude REAL,
     longitude REAL,
 
-    -- reset system (email OTP / link)
+    -- reset system
     reset_token TEXT,
     reset_token_expiry INTEGER,
 
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
@@ -120,10 +119,7 @@ VALUES (
     'Admin',
     'admin@flexihealth.com',
     '01700000000',
-
-    -- IMPORTANT: replace with real hashed password
     'pbkdf2:sha256:260000$adminseed$dummyhash',
-
     'admin',
     0,
     1,
