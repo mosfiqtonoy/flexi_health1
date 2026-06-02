@@ -1,131 +1,150 @@
 
-     # ==========================================================
-# USER MODEL - DATABASE LAYER (CLEAN + SAFE VERSION)
-# ==========================================================
-
-import sqlite3
-import logging
-from werkzeug.security import generate_password_hash
-from utils.db import get_db
+    from utils.db import get_db
 
 
-# ---------------- LOGGER ----------------
-logger = logging.getLogger(__name__)
-
-
-# ==========================================================
-# USER MODEL CLASS
-# ==========================================================
 class User:
-    """
-    Handles all database operations for users:
-    - Create user
-    - Find by email
-    - Find by phone
-    - Find by ID
-    """
+    def __init__(self, row):
+        if not row:
+            raise ValueError("User row cannot be None")
 
-    def __init__(self, id, name, email, phone, password, role, created_at):
-        self.id = id
-        self.name = name
-        self.email = email
-        self.phone = phone
-        self.password = password
-        self.role = role
-        self.created_at = created_at
+        self.id = row["id"]
+        self.full_name = row["full_name"]
+        self.email = row["email"]
+        self.phone = row["phone"]
 
+        self.password_hash = row["password_hash"]
 
-    # ======================================================
-    # CREATE USER
-    # ======================================================
+        self.role = row["role"]
+        self.balance = row["balance"]
+        self.is_active = row["is_active"]
+
+        # Extended profile fields (Flexi Health)
+        self.date_of_birth = row["date_of_birth"]
+        self.blood_group = row["blood_group"]
+        self.address = row["address"]
+        self.latitude = row["latitude"]
+        self.longitude = row["longitude"]
+
+        self.created_at = row["created_at"]
+
+    # =========================
+    # FETCH METHODS
+    # =========================
     @staticmethod
-    def create(name, email, phone, password, role='user'):
-        """
-        Inserts new user safely into database.
-        Returns: new user id OR False if failed
-        """
+    def get_by_id(user_id):
+        db = get_db()
+        row = db.execute(
+            "SELECT * FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+        return User(row) if row else None
 
-        try:
-            hashed_password = generate_password_hash(
-                password,
-                method='pbkdf2:sha256',
-                salt_length=16
-            )
+    @staticmethod
+    def get_by_email(email):
+        db = get_db()
+        row = db.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+        return User(row) if row else None
 
-            db = get_db()
+    @staticmethod
+    def get_by_phone(phone):
+        db = get_db()
+        row = db.execute(
+            "SELECT * FROM users WHERE phone = ?",
+            (phone,)
+        ).fetchone()
+        return User(row) if row else None
 
-            cursor = db.execute(
-                """
-                INSERT INTO users (name, email, phone, password, role)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (name, email, phone, hashed_password, role)
-            )
+    @staticmethod
+    def get_by_reset_token(token):
+        db = get_db()
+        row = db.execute(
+            "SELECT * FROM users WHERE reset_token = ?",
+            (token,)
+        ).fetchone()
+        return User(row) if row else None
 
-            db.commit()
+    @staticmethod
+    def get_all():
+        db = get_db()
+        rows = db.execute(
+            "SELECT * FROM users ORDER BY created_at DESC"
+        ).fetchall()
+        return [User(r) for r in rows]
 
-            user_id = cursor.lastrowid
-            logger.info(f"User created successfully: {email}")
+    @staticmethod
+    def count():
+        db = get_db()
+        return db.execute(
+            "SELECT COUNT(*) FROM users"
+        ).fetchone()[0]
 
-            return user_id
+    # =========================
+    # UPDATE METHODS (NEW)
+    # =========================
+    def update_balance(self, new_balance):
+        db = get_db()
+        db.execute(
+            "UPDATE users SET balance = ? WHERE id = ?",
+            (new_balance, self.id)
+        )
+        db.commit()
+        self.balance = new_balance
 
-        # ---------------- DUPLICATE ERROR ----------------
-        except sqlite3.IntegrityError:
-            logger.warning(f"Duplicate user attempt: {email} / {phone}")
+    def update_profile(self, **kwargs):
+        allowed_fields = [
+            "full_name",
+            "phone",
+            "date_of_birth",
+            "blood_group",
+            "address",
+            "latitude",
+            "longitude"
+        ]
+
+        fields = []
+        values = []
+
+        for key in allowed_fields:
+            if key in kwargs:
+                fields.append(f"{key} = ?")
+                values.append(kwargs[key])
+
+        if not fields:
             return False
 
-        # ---------------- GENERAL ERROR (SAFE) ----------------
-        except Exception as e:
-            logger.error(f"User creation failed: {str(e)}")
-            return False
+        values.append(self.id)
 
+        db = get_db()
+        db.execute(
+            f"UPDATE users SET {', '.join(fields)} WHERE id = ?",
+            values
+        )
+        db.commit()
 
-    # ======================================================
-    # FIND BY EMAIL
-    # ======================================================
-    @staticmethod
-    def find_by_email(email):
-        try:
-            db = get_db()
-            return db.execute(
-                "SELECT * FROM users WHERE email = ?",
-                (email,)
-            ).fetchone()
+        return True
 
-        except Exception as e:
-            logger.error(f"Email lookup failed: {str(e)}")
-            return None
+    # =========================
+    # SERIALIZATION (API READY)
+    # =========================
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "email": self.email,
+            "phone": self.phone,
 
+            "role": self.role,
+            "balance": self.balance,
+            "is_active": self.is_active,
 
-    # ======================================================
-    # FIND BY PHONE
-    # ======================================================
-    @staticmethod
-    def find_by_phone(phone):
-        try:
-            db = get_db()
-            return db.execute(
-                "SELECT * FROM users WHERE phone = ?",
-                (phone,)
-            ).fetchone()
+            "date_of_birth": self.date_of_birth,
+            "blood_group": self.blood_group,
+            "address": self.address,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
 
-        except Exception as e:
-            logger.error(f"Phone lookup failed: {str(e)}")
-            return None
-
-
-    # ======================================================
-    # FIND BY ID
-    # ======================================================
-    @staticmethod
-    def find_by_id(user_id):
-        try:
-            db = get_db()
-            return db.execute(
-                "SELECT * FROM users WHERE id = ?",
-                (user_id,)
-            ).fetchone()
-
-        except Exception as e:
-            logger.error(f"ID lookup failed: {str(e)}")
-            return None
+            "created_at": self.created_at
+        }
