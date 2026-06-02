@@ -8,21 +8,16 @@ from flask import g, current_app
 # =========================
 def get_db():
     if "db" not in g:
-        try:
-            # Safe config read
-            db_path = current_app.config.get("DATABASE")
+        db_path = current_app.config.get("DATABASE")
 
-            if not db_path:
-                raise Exception("DATABASE config is not set in Flask app config")
+        if not db_path:
+            raise RuntimeError("DATABASE config is missing in Flask app config")
 
-            g.db = sqlite3.connect(
-                db_path,
-                detect_types=sqlite3.PARSE_DECLTYPES
-            )
-            g.db.row_factory = sqlite3.Row
-
-        except Exception as e:
-            raise Exception(f"Database connection failed: {e}")
+        g.db = sqlite3.connect(
+            db_path,
+            detect_types=sqlite3.PARSE_DECLTYPES
+        )
+        g.db.row_factory = sqlite3.Row
 
     return g.db
 
@@ -42,24 +37,23 @@ def close_db(e=None):
 def init_db(app):
     app.teardown_appcontext(close_db)
 
-    with app.app_context():
-        try:
+    try:
+        schema_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "schema.sql"
+        )
+
+        if not os.path.exists(schema_path):
+            raise FileNotFoundError("schema.sql not found in project root")
+
+        # IMPORTANT: create app context safely
+        with app.app_context():
             db = get_db()
-
-            # schema path (project root)
-            schema_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "schema.sql"
-            )
-
-            if not os.path.exists(schema_path):
-                raise FileNotFoundError("schema.sql not found in project root")
-
             with open(schema_path, "r", encoding="utf-8") as f:
                 db.executescript(f.read())
 
             db.commit()
 
-        except Exception as e:
-            # Important: don't crash entire app silently
-            print(f"[DB INIT ERROR] {e}")
+    except Exception as e:
+        # Never crash full app in production init
+        print(f"[DB INIT ERROR] {e}")
