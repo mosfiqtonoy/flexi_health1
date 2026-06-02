@@ -8,20 +8,16 @@ from flask import g, current_app
 # =========================
 def get_db():
     if "db" not in g:
-        try:
-            db_path = current_app.config.get("DATABASE")
+        db_path = current_app.config.get("DATABASE")
 
-            if not db_path:
-                raise Exception("DATABASE config not found")
+        if not db_path:
+            raise Exception("DATABASE config missing")
 
-            g.db = sqlite3.connect(
-                db_path,
-                detect_types=sqlite3.PARSE_DECLTYPES
-            )
-            g.db.row_factory = sqlite3.Row
-
-        except Exception as e:
-            raise Exception(f"Database connection failed: {e}")
+        g.db = sqlite3.connect(
+            db_path,
+            detect_types=sqlite3.PARSE_DECLTYPES
+        )
+        g.db.row_factory = sqlite3.Row
 
     return g.db
 
@@ -36,7 +32,7 @@ def close_db(e=None):
 
 
 # =========================
-# INIT DATABASE (SAFE)
+# INIT DATABASE
 # =========================
 def init_db(app):
     app.teardown_appcontext(close_db)
@@ -47,4 +43,12 @@ def init_db(app):
     )
 
     if not os.path.exists(schema_path):
-        raise FileNotFoundError("schema
+        raise FileNotFoundError("schema.sql not found")
+
+    with open(schema_path, "r", encoding="utf-8") as f:
+        db = sqlite3.connect(
+            app.config["DATABASE"]
+        )
+        db.executescript(f.read())
+        db.commit()
+        db.close()
