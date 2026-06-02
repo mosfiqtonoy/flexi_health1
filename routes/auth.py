@@ -29,23 +29,23 @@ def login():
             return render_template("auth/login.html")
 
         user = (
-            User.find_by_email(identity)
+            User.get_by_email(identity)
             if "@" in identity
-            else User.find_by_phone(identity)
+            else User.get_by_phone(identity)
         )
 
-        if user and check_password_hash(user["password_hash"], password):
+        if user and check_password_hash(user.password_hash, password):
 
             session.clear()
             session.permanent = True
 
-            session["user_id"] = user["id"]
-            session["full_name"] = user["full_name"]
-            session["role"] = user["role"]
+            session["user_id"] = user.id
+            session["full_name"] = user.full_name
+            session["role"] = user.role
 
-            flash(f"Welcome {user['full_name']}!", "success")
+            flash(f"Welcome {user.full_name}!", "success")
 
-            if user["role"] == "admin":
+            if user.role == "admin":
                 return redirect(url_for("admin.panel"))
 
             return redirect(url_for("dashboard.home"))
@@ -73,14 +73,14 @@ def register():
             return render_template("auth/register.html")
 
         try:
-            if User.find_by_email(email) or User.find_by_phone(phone):
+            if User.get_by_email(email) or User.get_by_phone(phone):
                 flash("User already exists.", "warning")
                 return render_template("auth/register.html")
 
+            db = get_db()
             hashed = generate_password_hash(password)
 
-            db = get_db()
-            cursor = db.execute(
+            db.execute(
                 """
                 INSERT INTO users (full_name, email, phone, password_hash, role)
                 VALUES (?, ?, ?, ?, 'user')
@@ -115,28 +115,28 @@ def forgot_password():
             return render_template("auth/forgot_password.html")
 
         try:
-            user = User.find_by_email(email)
+            user = User.get_by_email(email)
 
             if not user:
                 flash("No account found.", "danger")
                 return render_template("auth/forgot_password.html")
 
+            token = secrets.token_urlsafe(32)
+            expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
+
             db = get_db()
 
             db.execute(
                 "DELETE FROM password_reset_tokens WHERE user_id = ?",
-                (user["id"],)
+                (user.id,)
             )
-
-            token = secrets.token_urlsafe(32)
-            expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
 
             db.execute(
                 """
                 INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
                 VALUES (?, ?, ?, 0)
                 """,
-                (user["id"], token, expires_at)
+                (user.id, token, expires_at)
             )
 
             db.commit()
