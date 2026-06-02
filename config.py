@@ -1,37 +1,42 @@
 # config.py
 
-```python
 import os
 from datetime import timedelta
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+
 class Config:
-    SECRET_KEY = os.environ.get(
-        "FLASK_SECRET_KEY",
-        "change-this-in-production"
-    )
+    # ---------------- CORE ----------------
+    SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "change-this-in-production")
 
-    DATABASE = os.environ.get(
+    # ---------------- DATABASE ----------------
+    # Render + production friendly fix
+    DATABASE_URL = os.environ.get(
         "DATABASE_URL",
-        os.path.join(BASE_DIR, "flexi_health.db")
+        "sqlite:///" + os.path.join(BASE_DIR, "flexi_health.db")
     )
 
+    # ---------------- SESSION ----------------
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)
 
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False  # production এ True করতে হবে (HTTPS)
     SESSION_COOKIE_SAMESITE = "Lax"
 
+    # ---------------- PAYMENT (optional) ----------------
     SSLCOMMERZ_STORE_ID = os.environ.get("SSLCOMMERZ_STORE_ID")
     SSLCOMMERZ_STORE_PASSWORD = os.environ.get("SSLCOMMERZ_STORE_PASSWORD")
 
+    # ---------------- MAIL ----------------
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = MAIL_USERNAME
+
+    # IMPORTANT FIX
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME")
 
 
 class DevelopmentConfig(Config):
@@ -40,12 +45,12 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True  # HTTPS required
 
 
 class TestingConfig(Config):
     TESTING = True
-    DATABASE = ":memory:"
+    DATABASE_URL = "sqlite:///:memory:"
 
 
 config_dict = {
@@ -54,5 +59,3 @@ config_dict = {
     "test": TestingConfig,
     "default": DevelopmentConfig,
 }
-```
-
