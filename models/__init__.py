@@ -1,18 +1,15 @@
 """
 Flexi Health - Models Package
-
 Central model registry for:
 - Flask Web App
 - REST API layer
 - Future mobile apps
-
 Keeps imports clean and scalable.
 """
 
 # =========================
 # CORE MODELS
 # =========================
-
 from .user import User
 
 # -------------------------
@@ -25,7 +22,6 @@ from .user import User
 # =========================
 # PUBLIC EXPORTS
 # =========================
-
 __all__ = [
     "User",
 ]
