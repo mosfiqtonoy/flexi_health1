@@ -8,7 +8,6 @@ from models.user import User
 def add_health_record(user_id, weight, height, bp_sys, bp_dia, blood_type, notes):
     try:
         db = get_db()
-
         db.execute(
             """
             INSERT INTO health_records
@@ -28,10 +27,8 @@ def add_health_record(user_id, weight, height, bp_sys, bp_dia, blood_type, notes
                 notes or None
             )
         )
-
         db.commit()
         return True
-
     except Exception:
         return False
 
@@ -39,7 +36,6 @@ def add_health_record(user_id, weight, height, bp_sys, bp_dia, blood_type, notes
 def get_health_records(user_id, limit=20):
     try:
         db = get_db()
-
         rows = db.execute(
             """
             SELECT * FROM health_records
@@ -49,9 +45,7 @@ def get_health_records(user_id, limit=20):
             """,
             (user_id, limit)
         ).fetchall()
-
         return [dict(r) for r in rows]
-
     except Exception:
         return []
 
@@ -59,7 +53,6 @@ def get_health_records(user_id, limit=20):
 def get_latest_health_record(user_id):
     try:
         db = get_db()
-
         row = db.execute(
             """
             SELECT * FROM health_records
@@ -69,9 +62,7 @@ def get_latest_health_record(user_id):
             """,
             (user_id,)
         ).fetchone()
-
         return dict(row) if row else None
-
     except Exception:
         return None
 
@@ -80,25 +71,21 @@ def get_latest_health_record(user_id):
 # SERVICE REQUEST
 # =========================
 def submit_service_request(user_id, service_type, description, amount_used=0.0):
-
     try:
-        user = User.get_by_id(user_id)
+        user = User.find_by_id(user_id)  # FIXED: was get_by_id
 
         if not user:
             return False, "User not found."
 
-        # safe float conversion
         try:
             amount_used = float(amount_used or 0)
         except (TypeError, ValueError):
             amount_used = 0.0
 
-        db = get_db()
-
-        # balance check
         if amount_used > 0 and user.balance < amount_used:
             return False, "Insufficient balance."
 
+        db = get_db()
         db.execute(
             """
             INSERT INTO service_requests
@@ -110,16 +97,11 @@ def submit_service_request(user_id, service_type, description, amount_used=0.0):
 
         if amount_used > 0:
             db.execute(
-                """
-                UPDATE users
-                SET balance = balance - ?
-                WHERE id = ?
-                """,
+                "UPDATE users SET balance = balance - ? WHERE id = ?",
                 (amount_used, user_id)
             )
 
         db.commit()
-
         return True, "Service request submitted."
 
     except Exception:
@@ -129,7 +111,6 @@ def submit_service_request(user_id, service_type, description, amount_used=0.0):
 def get_service_requests(user_id):
     try:
         db = get_db()
-
         rows = db.execute(
             """
             SELECT * FROM service_requests
@@ -138,9 +119,7 @@ def get_service_requests(user_id):
             """,
             (user_id,)
         ).fetchall()
-
         return [dict(r) for r in rows]
-
     except Exception:
         return []
 
@@ -148,7 +127,6 @@ def get_service_requests(user_id):
 def get_all_service_requests():
     try:
         db = get_db()
-
         rows = db.execute(
             """
             SELECT sr.*, u.full_name, u.email
@@ -157,9 +135,7 @@ def get_all_service_requests():
             ORDER BY sr.created_at DESC
             """
         ).fetchall()
-
         return [dict(r) for r in rows]
-
     except Exception:
         return []
 
@@ -168,20 +144,13 @@ def get_all_service_requests():
 # STATUS UPDATE
 # =========================
 def update_service_request_status(request_id, status):
-
     try:
-        allowed_status = {
-            "pending",
-            "in_progress",
-            "completed",
-            "rejected"
-        }
+        allowed_status = {"pending", "in_progress", "completed", "rejected"}
 
         if status not in allowed_status:
             return False
 
         db = get_db()
-
         db.execute(
             """
             UPDATE service_requests
@@ -191,10 +160,8 @@ def update_service_request_status(request_id, status):
             """,
             (status, request_id)
         )
-
         db.commit()
         return True
-
     except Exception:
         return False
 
@@ -203,7 +170,6 @@ def update_service_request_status(request_id, status):
 # DASHBOARD SUMMARY
 # =========================
 def get_dashboard_summary(user_id):
-
     try:
         db = get_db()
 
@@ -218,15 +184,11 @@ def get_dashboard_summary(user_id):
         ).fetchone()[0]
 
         recharge_total = db.execute(
-            """
-            SELECT COALESCE(SUM(amount), 0)
-            FROM recharge_history
-            WHERE user_id = ?
-            """,
+            "SELECT COALESCE(SUM(amount), 0) FROM recharge_history WHERE user_id = ?",
             (user_id,)
         ).fetchone()[0]
 
-        user = User.get_by_id(user_id)
+        user = User.find_by_id(user_id)  # FIXED: was get_by_id
 
         return {
             "health_records": health_count,
