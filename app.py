@@ -1,14 +1,16 @@
 from flask import Flask, render_template
 from config import Config
-from utils.db import init_db
+from db import init_db   # adjust if needed
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # SAFE INIT (still ok but better to keep schema idempotent)
-    init_db(app)
+    # DB INIT (safe)
+    with app.app_context():
+        init_db(app)
 
+    # Blueprints
     from routes.auth import auth_bp
     from routes.dashboard import dashboard_bp
     from routes.admin import admin_bp
@@ -35,4 +37,4 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
