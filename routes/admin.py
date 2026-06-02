@@ -1,70 +1,101 @@
-from flask import Blueprint, render_template, flash, redirect, url_for, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, flash
+
 from utils.security import admin_required
+from services.user_service import get_all_users, toggle_user_status
+from services.dashboard_service import (
+    get_all_service_requests,
+    update_service_request_status
+)
 from utils.db import get_db
 
-admin_bp = Blueprint('admin', __name__)
 
-@admin_bp.route('/admin/dashboard')
+admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+# =========================
+# ADMIN DASHBOARD PANEL
+# =========================
+@admin_bp.route("/")
 @admin_required
-def admin_dashboard():
+def panel():
     try:
+        users = get_all_users()
+        requests = get_all_service_requests()
+
         db = get_db()
-        query = """
-            SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at, s.balance 
-            FROM users u
-            LEFT JOIN savings_accounts s ON u.id = s.user_id
-            ORDER BY u.created_at DESC
-        """
-        users = db.execute(query).fetchall()
-        total_savings = db.execute("SELECT SUM(balance) FROM savings_accounts").fetchone()[0] or 0
-        total_users = len(users)
+
+        total_balance = db.execute(
+            "SELECT COALESCE(SUM(balance), 0) FROM users"
+        ).fetchone()[0]
+
+        total_recharge = db.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM recharge_history"
+        ).fetchone()[0]
+
+        stats = {
+            "total_users": len(users),
+            "active_users": sum(1 for u in users if u.is_active),
+            "total_requests": len(requests),
+            "pending_requests": sum(
+                1 for r in requests if r["status"] == "pending"
+            ),
+            "total_balance": total_balance,
+            "total_recharge": total_recharge
+        }
+
         return render_template(
-            "admin/dashboard.html",
+            "admin/admin.html",
             users=users,
-            total_savings=total_savings,
-            total_users=total_users
+            requests=requests,
+            stats=stats
         )
-    except Exception as e:
-        current_app.logger.error(f"Admin Dashboard Failure: {str(e)}")
-        flash("System failed to retrieve administrative metrics.", "danger")
-        return redirect(url_for('dashboard.user_dashboard'))
 
-@admin_bp.route('/admin/requests')
-@admin_required
-def manage_service_requests():
-    try:
-        db = get_db()
-        requests = db.execute("SELECT * FROM service_requests ORDER BY status DESC, created_at ASC").fetchall()
-        return render_template("admin/requests.html", requests=requests)
     except Exception as e:
-        current_app.logger.error(f"Service Request Fetch Failure: {str(e)}")
-        flash("Failed to load service requests.", "danger")
-        return redirect(url_for('admin.admin_dashboard'))
+        return render_template(
+            "errors/500.html",
+            error=str(e)
+        ), 500
 
-@admin_bp.route('/admin/requests/update/<int:request_id>', methods=['POST'])
-@admin_required
-def update_request_status(request_id):
-    new_status = request.form.get('status')
-    try:
-        db = get_db()
-        db.execute("UPDATE service_requests SET status = ? WHERE id = ?", (new_status, request_id))
-        db.commit()
-        flash(f"Request #{request_id} status updated to {new_status}.", "success")
-    except Exception as e:
-        current_app.logger.error(f"Request Status Update Failure: {str(e)}")
-        flash("Failed to update request status.", "danger")
-    return redirect(url_for('admin.manage_service_requests'))
 
-@admin_bp.route('/admin/user/update/<int:user_id>', methods=['POST'])
+# =========================
+# TOGGLE USER STATUS
+# =========================
+@admin_bp.route("/user/<int:user_id>/toggle", methods=["POST"])
 @admin_required
-def update_user_status(user_id):
-    new_role = request.form.get('role')
+def toggle_user(user_id):
     try:
-        db = get_db()
-        db.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
-        db.commit()
-        flash(f"Role updated successfully for User ID {user_id}.", "success")
-    except Exception as e:
-        current_app.logger.error(f"Role Update Failure for User ID {user_id}: {str(e)}")
-        flash("Failed to update user role.", "danger")
-    return redirect(url_for('admin.admin_dashboard'))
+        success, message = toggle_user_status(user_id)
+        flash(message, "success" if success else "danger")
+    except Exception:
+        flash("Something went wrong while updating user.", "danger")
+
+    return redirect(url_for("admin.panel"))
+
+
+# =========================
+# UPDATE SERVICE REQUEST
+# =========================
+@admin_bp.route("/request/<int:req_id>/status", methods=["POST"])
+@admin_required
+def update_request(req_id):
+    try:
+        status = request.form.get("status", "pending")
+
+        allowed_status = {
+            "pending",
+            "in_progress",
+            "completed",
+            "rejected"
+        }
+
+        if status not in allowed_status:
+            flash("Invalid status.", "danger")
+            return redirect(url_for("admin.panel"))
+
+        update_service_request_status(req_id, status)
+        flash("Request status updated.", "success")
+
+    except Exception:
+        flash("Failed to update request.", "danger")
+
+    return redirect(url_for("admin.panel"))
