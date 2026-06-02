@@ -1,101 +1,65 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
-
-from utils.security import admin_required
-from services.user_service import get_all_users, toggle_user_status
-from services.dashboard_service import (
-    get_all_service_requests,
-    update_service_request_status
-)
-from utils.db import get_db
-
-
-admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+import sqlite3
+import os
+from flask import g, current_app
 
 
 # =========================
-# ADMIN DASHBOARD PANEL
+# DATABASE CONNECTION
 # =========================
-@admin_bp.route("/")
-@admin_required
-def panel():
-    try:
-        users = get_all_users()
-        requests = get_all_service_requests()
+def get_db():
+    if "db" not in g:
+        try:
+            # Safe config read
+            db_path = current_app.config.get("DATABASE")
 
-        db = get_db()
+            if not db_path:
+                raise Exception("DATABASE config is not set in Flask app config")
 
-        total_balance = db.execute(
-            "SELECT COALESCE(SUM(balance), 0) FROM users"
-        ).fetchone()[0]
+            g.db = sqlite3.connect(
+                db_path,
+                detect_types=sqlite3.PARSE_DECLTYPES
+            )
+            g.db.row_factory = sqlite3.Row
 
-        total_recharge = db.execute(
-            "SELECT COALESCE(SUM(amount), 0) FROM recharge_history"
-        ).fetchone()[0]
+        except Exception as e:
+            raise Exception(f"Database connection failed: {e}")
 
-        stats = {
-            "total_users": len(users),
-            "active_users": sum(1 for u in users if u.is_active),
-            "total_requests": len(requests),
-            "pending_requests": sum(
-                1 for r in requests if r["status"] == "pending"
-            ),
-            "total_balance": total_balance,
-            "total_recharge": total_recharge
-        }
-
-        return render_template(
-            "admin/admin.html",
-            users=users,
-            requests=requests,
-            stats=stats
-        )
-
-    except Exception as e:
-        return render_template(
-            "errors/500.html",
-            error=str(e)
-        ), 500
+    return g.db
 
 
 # =========================
-# TOGGLE USER STATUS
+# CLOSE CONNECTION
 # =========================
-@admin_bp.route("/user/<int:user_id>/toggle", methods=["POST"])
-@admin_required
-def toggle_user(user_id):
-    try:
-        success, message = toggle_user_status(user_id)
-        flash(message, "success" if success else "danger")
-    except Exception:
-        flash("Something went wrong while updating user.", "danger")
-
-    return redirect(url_for("admin.panel"))
+def close_db(e=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
 
 
 # =========================
-# UPDATE SERVICE REQUEST
+# INIT DATABASE
 # =========================
-@admin_bp.route("/request/<int:req_id>/status", methods=["POST"])
-@admin_required
-def update_request(req_id):
-    try:
-        status = request.form.get("status", "pending")
+def init_db(app):
+    app.teardown_appcontext(close_db)
 
-        allowed_status = {
-            "pending",
-            "in_progress",
-            "completed",
-            "rejected"
-        }
+    with app.app_context():
+        try:
+            db = get_db()
 
-        if status not in allowed_status:
-            flash("Invalid status.", "danger")
-            return redirect(url_for("admin.panel"))
+            # schema path (project root)
+            schema_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "schema.sql"
+            )
 
-        update_service_request_status(req_id, status)
-        flash("Request status updated.", "success")
+            if not os.path.exists(schema_path):
+                raise FileNotFoundError("schema.sql not found in project root")
 
-    except Exception:
-        flash("Failed to update request.", "danger")
+            with open(schema_path, "r", encoding="utf-8") as f:
+                db.executescript(f.read())
 
-    return redirect(url_for("admin.panel"))
+            db.commit()
+
+        except Exception as e:
+            # Important: don't crash entire app silently
+            print(f"[DB INIT ERROR] {e}")
