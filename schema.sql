@@ -9,15 +9,13 @@ CREATE TABLE IF NOT EXISTS users (
     phone TEXT UNIQUE NOT NULL,
 
     password_hash TEXT NOT NULL,
-
     role TEXT NOT NULL DEFAULT 'user',
 
-    -- wallet system (safe integer money)
+    -- wallet system
     balance INTEGER NOT NULL DEFAULT 0,
-
     is_active INTEGER NOT NULL DEFAULT 1,
 
-    -- ===== Extended Profile Fields =====
+    -- ===== Extended Profile =====
     date_of_birth TEXT,
     blood_group TEXT,
     address TEXT,
@@ -25,11 +23,13 @@ CREATE TABLE IF NOT EXISTS users (
     latitude REAL,
     longitude REAL,
 
+    -- reset system (email OTP / link)
     reset_token TEXT,
     reset_token_expiry INTEGER,
 
-    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
@@ -51,11 +51,9 @@ CREATE TABLE IF NOT EXISTS health_records (
     blood_type TEXT,
     notes TEXT,
 
-    recorded_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    recorded_at TEXT NOT NULL DEFAULT (datetime('now')),
 
-    FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_health_user ON health_records(user_id);
@@ -74,11 +72,9 @@ CREATE TABLE IF NOT EXISTS recharge_history (
 
     status TEXT NOT NULL DEFAULT 'completed',
 
-    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
 
-    FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_recharge_user ON recharge_history(user_id);
@@ -98,12 +94,10 @@ CREATE TABLE IF NOT EXISTS service_requests (
 
     amount_used INTEGER DEFAULT 0,
 
-    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-    updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
 
-    FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_service_user ON service_requests(user_id);
@@ -127,7 +121,7 @@ VALUES (
     'admin@flexihealth.com',
     '01700000000',
 
-    -- IMPORTANT: replace with real hashed password in production
+    -- IMPORTANT: replace with real hashed password
     'pbkdf2:sha256:260000$adminseed$dummyhash',
 
     'admin',
