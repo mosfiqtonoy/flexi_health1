@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% block title %}Health Records — Flexi Health{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:2rem;">
+    <h1 style="font-size:1.6rem;font-weight:800;">
+        <i class="bi bi-heart-pulse" style="color:var(--green);"></i>
+        Health Records
+    </h1>
+
+    <p style="color:var(--muted);font-size:0.9rem;">
+        Track your vital statistics over time
+    </p>
+</div>
+
+<div class="row g-3">
+
+    <!-- ================= ADD RECORD ================= -->
+    <div class="col-lg-4">
+
+        <div class="card-flexi">
+
+            <div class="section-title">
+                <i class="bi bi-plus-circle" style="color:var(--green);"></i>
+                Add Record
+            </div>
+
+            <form method="POST">
+
+                <div class="mb-3">
+                    <label class="form-label-flexi">Weight (kg)</label>
+                    <input type="number"
+                           step="0.1"
+                           name="weight"
+                           class="form-control form-control-flexi"
+                           placeholder="e.g. 70.5">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-flexi">Height (cm)</label>
+                    <input type="number"
+                           step="0.1"
+                           name="height"
+                           class="form-control form-control-flexi"
+                           placeholder="e.g. 170">
+                </div>
+
+                <div class="row g-2 mb-3">
+
+                    <div class="col">
+                        <label class="form-label-flexi">Systolic</label>
+                        <input type="number"
+                               name="bp_systolic"
+                               class="form-control form-control-flexi"
+                               placeholder="120">
+                    </div>
+
+                    <div class="col">
+                        <label class="form-label-flexi">Diastolic</label>
+                        <input type="number"
+                               name="bp_diastolic"
+                               class="form-control form-control-flexi"
+                               placeholder="80">
+                    </div>
+
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label-flexi">Blood Type</label>
+                    <select name="blood_type" class="form-select form-control-flexi">
+                        <option value="">Select blood type</option>
+                        <option>A+</option>
+                        <option>A-</option>
+                        <option>B+</option>
+                        <option>B-</option>
+                        <option>AB+</option>
+                        <option>AB-</option>
+                        <option>O+</option>
+                        <option>O-</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label-flexi">Notes</label>
+                    <textarea name="notes"
+                              class="form-control form-control-flexi"
+                              rows="3"
+                              placeholder="Any additional notes..."></textarea>
+                </div>
+
+                <button class="btn-flexi w-100" type="submit">
+                    <i class="bi bi-save"></i> Save Record
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ================= HISTORY ================= -->
+    <div class="col-lg-8">
+
+        <div class="card-flexi">
+
+            <div class="section-title">
+                <i class="bi bi-table" style="color:var(--green);"></i>
+                History
+            </div>
+
+            {% if records and records|length > 0 %}
+
+                <div style="overflow-x:auto;">
+
+                    <table class="table-flexi">
+
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Weight</th>
+                                <th>Height</th>
+                                <th>BP</th>
+                                <th>Blood</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for r in records %}
+
+                            <tr>
+
+                                <td style="color:var(--muted);">
+                                    {{ loop.index }}
+                                </td>
+
+                                <td style="color:var(--muted);font-size:0.8rem;white-space:nowrap;">
+                                    {{ r.recorded_at or '—' }}
+                                </td>
+
+                                <td>
+                                    {{ r.weight or '—' }}
+                                    {% if r.weight %}kg{% endif %}
+                                </td>
+
+                                <td>
+                                    {{ r.height or '—' }}
+                                    {% if r.height %}cm{% endif %}
+                                </td>
+
+                                <td>
+                                    {% if r.blood_pressure_systolic %}
+                                        <span style="color:{% if r.blood_pressure_systolic > 130 %}var(--danger){% else %}var(--green){% endif %};">
+                                            {{ r.blood_pressure_systolic }}/{{ r.blood_pressure_diastolic }} mmHg
+                                        </span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if r.blood_type %}
+                                        <span class="badge-flexi badge-red">
+                                            {{ r.blood_type }}
+                                        </span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+
+                                <td style="color:var(--muted);
+                                           font-size:0.82rem;
+                                           max-width:150px;
+                                           overflow:hidden;
+                                           text-overflow:ellipsis;
+                                           white-space:nowrap;"
+                                    title="{{ r.notes or '' }}">
+
+                                    {{ r.notes or '—' }}
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            {% else %}
+
+                <div style="text-align:center;padding:3rem;color:var(--muted);">
+
+                    <i class="bi bi-heart-pulse"
+                       style="font-size:3rem;display:block;margin-bottom:1rem;opacity:0.4;"></i>
+
+                    <p>No health records yet. Add your first entry!</p>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
