@@ -7,9 +7,9 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
-    SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "change-this-in-production")
+    SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "dev-secret")
 
-    # IMPORTANT FIX
+    # IMPORTANT FIX: sqlite friendly + render safe
     DATABASE = os.environ.get(
         "DATABASE_URL",
         os.path.join(BASE_DIR, "flexi_health.db")
@@ -21,15 +21,12 @@ class Config:
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    SSLCOMMERZ_STORE_ID = os.environ.get("SSLCOMMERZ_STORE_ID")
-    SSLCOMMERZ_STORE_PASSWORD = os.environ.get("SSLCOMMERZ_STORE_PASSWORD")
-
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME")
+    MAIL_DEFAULT_SENDER = MAIL_USERNAME
 
 
 class DevelopmentConfig(Config):
