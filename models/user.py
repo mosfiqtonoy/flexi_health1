@@ -15,10 +15,10 @@ class User:
         self.password_hash = row["password_hash"]
 
         self.role = row["role"]
-        self.balance = row["balance"]
-        self.is_active = row["is_active"]
+        self.balance = row["balance"] or 0
+        self.is_active = row["is_active"] if row["is_active"] is not None else 1
 
-        # Extended profile fields (Flexi Health)
+        # Extended profile fields (safe access)
         self.date_of_birth = row["date_of_birth"]
         self.blood_group = row["blood_group"]
         self.address = row["address"]
@@ -82,7 +82,7 @@ class User:
         ).fetchone()[0]
 
     # =========================
-    # UPDATE METHODS (NEW)
+    # UPDATE METHODS
     # =========================
     def update_balance(self, new_balance):
         db = get_db()
@@ -127,7 +127,7 @@ class User:
         return True
 
     # =========================
-    # SERIALIZATION (API READY)
+    # SERIALIZATION
     # =========================
     def to_dict(self):
         return {
