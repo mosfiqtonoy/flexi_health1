@@ -18,9 +18,7 @@ auth_bp = Blueprint("auth", __name__)
 # =========================
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-
     if request.method == "POST":
-
         identity = request.form.get("identity", "").strip().lower()
         password = request.form.get("password", "")
 
@@ -29,16 +27,14 @@ def login():
             return render_template("auth/login.html")
 
         user = (
-            User.get_by_email(identity)
+            User.find_by_email(identity)
             if "@" in identity
-            else User.get_by_phone(identity)
+            else User.find_by_phone(identity)
         )
 
         if user and check_password_hash(user.password_hash, password):
-
             session.clear()
             session.permanent = True
-
             session["user_id"] = user.id
             session["full_name"] = user.full_name
             session["role"] = user.role
@@ -47,7 +43,6 @@ def login():
 
             if user.role == "admin":
                 return redirect(url_for("admin.panel"))
-
             return redirect(url_for("dashboard.home"))
 
         flash("Invalid credentials.", "danger")
@@ -60,9 +55,7 @@ def login():
 # =========================
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-
     if request.method == "POST":
-
         full_name = request.form.get("full_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         phone = request.form.get("phone", "").strip()
@@ -73,13 +66,12 @@ def register():
             return render_template("auth/register.html")
 
         try:
-            if User.get_by_email(email) or User.get_by_phone(phone):
+            if User.find_by_email(email) or User.find_by_phone(phone):
                 flash("User already exists.", "warning")
                 return render_template("auth/register.html")
 
             db = get_db()
             hashed = generate_password_hash(password)
-
             db.execute(
                 """
                 INSERT INTO users (full_name, email, phone, password_hash, role)
@@ -87,9 +79,7 @@ def register():
                 """,
                 (full_name, email, phone, hashed)
             )
-
             db.commit()
-
             flash("Account created successfully!", "success")
             return redirect(url_for("auth.login"))
 
@@ -105,9 +95,7 @@ def register():
 # =========================
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
-
     if request.method == "POST":
-
         email = request.form.get("email", "").strip().lower()
 
         if not email:
@@ -115,7 +103,7 @@ def forgot_password():
             return render_template("auth/forgot_password.html")
 
         try:
-            user = User.get_by_email(email)
+            user = User.find_by_email(email)
 
             if not user:
                 flash("No account found.", "danger")
@@ -125,24 +113,13 @@ def forgot_password():
             expires_at = int((datetime.utcnow() + timedelta(minutes=30)).timestamp())
 
             db = get_db()
-
             db.execute(
-                "DELETE FROM password_reset_tokens WHERE user_id = ?",
-                (user.id,)
+                "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?",
+                (token, expires_at, user.id)
             )
-
-            db.execute(
-                """
-                INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
-                VALUES (?, ?, ?, 0)
-                """,
-                (user.id, token, expires_at)
-            )
-
             db.commit()
 
             reset_url = url_for("auth.reset_password", token=token, _external=True)
-
             mail = Mail(current_app)
             msg = Message(
                 subject="Flexi Health - Password Reset",
@@ -166,15 +143,12 @@ def forgot_password():
 # =========================
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
-
     db = get_db()
+    import time
 
     reset = db.execute(
-        """
-        SELECT * FROM password_reset_tokens
-        WHERE token = ? AND used = 0 AND expires_at > ?
-        """,
-        (token, int(datetime.utcnow().timestamp()))
+        "SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > ?",
+        (token, int(time.time()))
     ).fetchone()
 
     if not reset:
@@ -182,7 +156,6 @@ def reset_password(token):
         return redirect(url_for("auth.forgot_password"))
 
     if request.method == "POST":
-
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
 
@@ -195,17 +168,10 @@ def reset_password(token):
             return render_template("auth/reset_password.html", token=token)
 
         hashed = generate_password_hash(password)
-
         db.execute(
-            "UPDATE users SET password_hash = ? WHERE id = ?",
-            (hashed, reset["user_id"])
+            "UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?",
+            (hashed, reset["id"])
         )
-
-        db.execute(
-            "UPDATE password_reset_tokens SET used = 1 WHERE token = ?",
-            (token,)
-        )
-
         db.commit()
 
         flash("Password reset successful.", "success")
