@@ -1,10 +1,9 @@
-
-   from utils.db import get_db
+from utils.db import get_db
 from models.user import User
 
 
 # =========================
-# GET USER PROFILE
+# PROFILE
 # =========================
 def get_user_profile(user_id):
     db = get_db()
@@ -18,12 +17,11 @@ def get_user_profile(user_id):
 
 
 # =========================
-# UPDATE USER PROFILE
+# UPDATE PROFILE
 # =========================
 def update_user_profile(user_id, full_name, phone):
     db = get_db()
 
-    # check duplicate phone
     existing = db.execute(
         "SELECT id FROM users WHERE phone = ? AND id != ?",
         (phone, user_id)
@@ -33,11 +31,7 @@ def update_user_profile(user_id, full_name, phone):
         return False, "Phone number already in use."
 
     db.execute(
-        """
-        UPDATE users
-        SET full_name = ?, phone = ?
-        WHERE id = ?
-        """,
+        "UPDATE users SET full_name = ?, phone = ? WHERE id = ?",
         (full_name, phone, user_id)
     )
 
@@ -46,7 +40,7 @@ def update_user_profile(user_id, full_name, phone):
 
 
 # =========================
-# GET ALL USERS  (🔥 FIX FOR YOUR ERROR)
+# GET ALL USERS
 # =========================
 def get_all_users():
     db = get_db()
@@ -59,7 +53,7 @@ def get_all_users():
 
 
 # =========================
-# RECHARGE SYSTEM
+# RECHARGE
 # =========================
 def add_recharge(user_id, amount, operator):
     SAVINGS_RATE = 0.05
@@ -90,7 +84,7 @@ def add_recharge(user_id, amount, operator):
 
 
 # =========================
-# RECHARGE HISTORY
+# HISTORY
 # =========================
 def get_recharge_history(user_id, limit=20):
     db = get_db()
