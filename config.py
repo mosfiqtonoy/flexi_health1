@@ -1,5 +1,4 @@
 # config.py
-
 import os
 from datetime import timedelta
 
@@ -9,9 +8,9 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", "dev-secret")
 
-    # IMPORTANT FIX: sqlite friendly + render safe
+    # SQLite safe (Render friendly)
     DATABASE = os.environ.get(
-        "DATABASE_URL",
+        "DATABASE_PATH",
         os.path.join(BASE_DIR, "flexi_health.db")
     )
 
@@ -26,7 +25,7 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = MAIL_USERNAME
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME", "noreply@example.com")
 
 
 class DevelopmentConfig(Config):
