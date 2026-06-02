@@ -136,5 +136,5 @@ def api_all_users():
 
     return jsonify({
         "success": True,
-        "users": [u.to_dict() for u in users]
+        "users": users   # ✅ FIXED (no .to_dict())
     }), 200
