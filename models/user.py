@@ -1,12 +1,10 @@
-
-   from utils.db import get_db
+from utils.db import get_db
 
 
 class User:
     def __init__(self, row):
         if not row:
             raise ValueError("User row cannot be None")
-
         self.id = row["id"]
         self.full_name = row["full_name"]
         self.email = row["email"]
@@ -15,18 +13,17 @@ class User:
         self.role = row["role"]
         self.balance = row["balance"]
         self.is_active = row["is_active"]
-
         self.date_of_birth = row["date_of_birth"]
         self.blood_group = row["blood_group"]
         self.address = row["address"]
         self.latitude = row["latitude"]
         self.longitude = row["longitude"]
-
         self.created_at = row["created_at"]
 
     # =========================
-    # FIXED FIND METHODS (IMPORTANT)
+    # FIND METHODS
     # =========================
+
     @staticmethod
     def find_by_email(email):
         db = get_db()
