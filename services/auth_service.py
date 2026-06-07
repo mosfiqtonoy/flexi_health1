@@ -1,4 +1,3 @@
-
 import time
 from utils.db import get_db
 from utils.security import (
@@ -9,12 +8,10 @@ from utils.security import (
 )
 from models.user import User
 
-
 # =========================
 # REGISTER USER
 # =========================
-def register_user(full_name, email, phone, password):
-
+def register_user(full_name, email, phone, password, blood_group="", dob="", address="", latitude="", longitude=""):
     try:
         db = get_db()
 
@@ -28,7 +25,7 @@ def register_user(full_name, email, phone, password):
         if User.get_by_phone(phone):
             return False, "Phone number already registered."
 
-        if len(password or "") < 6:
+        if len(password or "") < 8:
             return False, "Password too weak."
 
         pw_hash = hash_password(password)
@@ -36,17 +33,18 @@ def register_user(full_name, email, phone, password):
         db.execute(
             """
             INSERT INTO users
-            (full_name, email, phone, password_hash)
-            VALUES (?, ?, ?, ?)
+            (full_name, email, phone, password_hash, blood_group, date_of_birth, address, latitude, longitude)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (full_name.strip(), email, phone, pw_hash)
+            (full_name.strip(), email, phone, pw_hash, blood_group, dob, address, latitude, longitude)
         )
 
         db.commit()
 
         return True, "Registration successful."
 
-    except Exception:
+    except Exception as e:
+        print(f"Error during registration: {e}")
         return False, "Registration failed. Try again."
 
 
@@ -54,7 +52,6 @@ def register_user(full_name, email, phone, password):
 # AUTHENTICATION
 # =========================
 def authenticate_user(email_or_phone, password):
-
     try:
         identifier = email_or_phone.strip()
 
@@ -82,7 +79,6 @@ def authenticate_user(email_or_phone, password):
 # PASSWORD RESET INIT
 # =========================
 def initiate_password_reset(email):
-
     try:
         db = get_db()
 
@@ -117,9 +113,8 @@ def initiate_password_reset(email):
 # PASSWORD RESET
 # =========================
 def reset_password(token, new_password):
-
     try:
-        if len(new_password or "") < 6:
+        if len(new_password or "") < 8:
             return False, "Password too weak."
 
         user = User.get_by_reset_token(token)
