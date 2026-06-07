@@ -1,23 +1,36 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart'; // আপনার LoginScreen ফাইলটি ইমপোর্ট করলাম
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
 
-void main() {
-  runApp(const FlexiHealthApp());
+void main() async {
+ 
+  WidgetsFlutterBinding.ensureInitialized();
+
+ 
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getString('user_id');
+
+  
+  runApp(FlexiHealthApp(isLoggedIn: userId != null));
 }
 
 class FlexiHealthApp extends StatelessWidget {
-  const FlexiHealthApp({super.key});
+  final bool isLoggedIn;
+  
+  const FlexiHealthApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // ডিবাগ ব্যানারটি সরিয়ে ফেলার জন্য
+      debugShowCheckedModeBanner: false,
       title: 'FlexiHealth',
       theme: ThemeData(
-        primarySwatch: Colors.teal, // আপনার লোগোর রঙের সাথে মিল রেখে
+        primarySwatch: Colors.teal,
         useMaterial3: true,
       ),
-      home: const LoginScreen(), // অ্যাপ চালু হলে সরাসরি লগইন স্ক্রিন আসবে
+      
+      home: isLoggedIn ? const DashboardScreen() : const LoginScreen(),
     );
   }
 }
