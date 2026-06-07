@@ -2,47 +2,26 @@
 {% block title %}Register — Flexi Health{% endblock %}
 
 {% block content %}
-
-<div class="min-vh-100 d-flex align-items-center justify-content-center"
-     style="margin-top:-60px; padding-top:60px;">
-
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="margin-top:-60px; padding-top:60px;">
     <div style="width:100%; max-width:520px; padding: 2rem 1rem;">
-
-        <!-- HEADER -->
         <div class="text-center mb-4">
             <h1 style="font-weight:800;color:var(--text);">Create Account</h1>
             <p style="color:var(--muted);">Join Flexi Health</p>
         </div>
-
         <div class="card-flexi">
-
             <form method="POST" action="{{ url_for('auth.register') }}">
-
-                <!-- NAME -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Full Name</label>
-                    <input type="text" name="name"
-                           class="form-control form-control-flexi"
-                           required>
+                    <input type="text" name="name" class="form-control form-control-flexi" required>
                 </div>
-
-                <!-- EMAIL / PHONE -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Email / Phone</label>
-                    <input type="text" name="identifier"
-                           class="form-control form-control-flexi"
-                           required>
+                    <input type="text" name="identifier" class="form-control form-control-flexi" required>
                 </div>
-
-                <!-- PASSWORD -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Password</label>
-                    <input type="password" name="password"
-                           class="form-control form-control-flexi"
-                           required>
+                    <input type="password" name="password" class="form-control form-control-flexi" required>
                 </div>
-
-                <!-- BLOOD GROUP -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Blood Group</label>
                     <select name="blood_group" class="form-control form-control-flexi">
@@ -52,41 +31,86 @@
                         <option>AB+</option><option>AB-</option>
                     </select>
                 </div>
-
-                <!-- DOB -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Date of Birth</label>
-                    <input type="date" name="dob"
-                           class="form-control form-control-flexi">
+                    <input type="date" name="dob" class="form-control form-control-flexi">
                 </div>
-
-                <!-- ADDRESS -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Address</label>
-                    <textarea name="address"
-                              class="form-control form-control-flexi"
-                              rows="2"></textarea>
+                    <textarea name="address" id="address" class="form-control form-control-flexi" rows="2"></textarea>
                 </div>
-
-                <!-- LOCATION (MAP PLACEHOLDER) -->
                 <div class="mb-3">
                     <label class="form-label-flexi">Location</label>
-                    <div id="map"
-                         style="height:180px;border-radius:12px;
-                         background:#eee;display:flex;
-                         align-items:center;justify-content:center;">
-                        📍 Map will load here (Google Maps / Leaflet)
-                    </div>
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+                    <div id="map" style="height:250px;border-radius:12px;background:#eee;width:100%;"></div>
                 </div>
-
                 <button type="submit" class="btn-flexi w-100">
                     Create Account
                 </button>
-
             </form>
-
         </div>
     </div>
 </div>
 
+<script>
+let map;
+let marker;
+let geocoder;
+
+function initMap() {
+    const defaultLocation = { lat: 23.8103, lng: 90.4125 };
+    
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: defaultLocation,
+        zoom: 15,
+        mapTypeControl: false,
+    });
+
+    geocoder = new google.maps.Geocoder();
+
+    marker = new google.maps.Marker({
+        position: defaultLocation,
+        map: map,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+    });
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+                map.setCenter(pos);
+                marker.setPosition(pos);
+                updateLocationData(pos);
+            }
+        );
+    }
+
+    google.maps.event.addListener(marker, 'dragend', function() {
+        updateLocationData(marker.getPosition());
+    });
+
+    map.addListener("click", (mapsMouseEvent) => {
+        marker.setPosition(mapsMouseEvent.latLng);
+        updateLocationData(mapsMouseEvent.latLng);
+    });
+}
+
+function updateLocationData(latLng) {
+    document.getElementById('latitude').value = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+    document.getElementById('longitude').value = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+
+    geocoder.geocode({ location: latLng }, (results, status) => {
+        if (status === "OK" && results[0]) {
+            document.getElementById('address').value = results[0].formatted_address;
+        }
+    });
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
 {% endblock %}
+               
