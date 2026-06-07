@@ -6,14 +6,13 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # DB INIT (SAFE)
     with app.app_context():
         init_db(app)
 
-    # Blueprints
     from routes.auth import auth_bp
     from routes.dashboard import dashboard_bp
     from routes.admin import admin_bp
+    from routes.payment import payment_bp
 
     from api.auth_api import auth_api_bp
     from api.user_api import user_api_bp
@@ -22,6 +21,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(payment_bp, url_prefix="/payment")
 
     app.register_blueprint(auth_api_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(user_api_bp, url_prefix="/api/v1/user")
@@ -32,7 +32,6 @@ def create_app():
         return render_template("errors/404.html"), 404
 
     return app
-
 
 app = create_app()
 
