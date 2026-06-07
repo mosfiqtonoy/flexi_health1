@@ -1,102 +1,52 @@
 from utils.db import get_db
 from models.user import User
 
-
-# =========================
-# PROFILE
-# =========================
 def get_user_profile(user_id):
     db = get_db()
-
-    row = db.execute(
-        "SELECT * FROM users WHERE id = ?",
-        (user_id,)
-    ).fetchone()
-
+    row = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     return User(row) if row else None
 
-
-# =========================
-# UPDATE PROFILE
-# =========================
-def update_user_profile(user_id, full_name, phone):
+def update_user_profile(user_id, full_name, phone, blood_group="", dob="", address="", latitude="", longitude=""):
     db = get_db()
-
-    existing = db.execute(
-        "SELECT id FROM users WHERE phone = ? AND id != ?",
-        (phone, user_id)
-    ).fetchone()
-
+    existing = db.execute("SELECT id FROM users WHERE phone = ? AND id != ?", (phone, user_id)).fetchone()
+    
     if existing:
         return False, "Phone number already in use."
-
+        
     db.execute(
-        "UPDATE users SET full_name = ?, phone = ? WHERE id = ?",
-        (full_name, phone, user_id)
+        """
+        UPDATE users 
+        SET full_name = ?, phone = ?, blood_group = ?, date_of_birth = ?, address = ?, latitude = ?, longitude = ? 
+        WHERE id = ?
+        """,
+        (full_name, phone, blood_group, dob, address, latitude, longitude, user_id)
     )
-
     db.commit()
     return True, "Profile updated successfully."
 
-
-# =========================
-# GET ALL USERS
-# =========================
 def get_all_users():
     db = get_db()
-
-    rows = db.execute(
-        "SELECT * FROM users ORDER BY id DESC"
-    ).fetchall()
-
+    rows = db.execute("SELECT * FROM users ORDER BY id DESC").fetchall()
     return [dict(row) for row in rows]
 
-
-# =========================
-# RECHARGE
-# =========================
 def add_recharge(user_id, amount, operator):
-    SAVINGS_RATE = 0.05
+    SAVINGS_RATE = 0.10
     saved_amount = round(amount * SAVINGS_RATE, 2)
-
     db = get_db()
-
+    
     db.execute(
-        """
-        INSERT INTO recharge_history
-        (user_id, amount, saved_amount, operator, status)
-        VALUES (?, ?, ?, ?, 'completed')
-        """,
+        "INSERT INTO recharge_history (user_id, amount, saved_amount, operator, status) VALUES (?, ?, ?, ?, 'completed')",
         (user_id, amount, saved_amount, operator)
     )
-
-    db.execute(
-        """
-        UPDATE users
-        SET balance = balance + ?
-        WHERE id = ?
-        """,
-        (saved_amount, user_id)
-    )
-
+    db.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (saved_amount, user_id))
     db.commit()
+    
     return saved_amount
 
-
-# =========================
-# HISTORY
-# =========================
 def get_recharge_history(user_id, limit=20):
     db = get_db()
-
     rows = db.execute(
-        """
-        SELECT * FROM recharge_history
-        WHERE user_id = ?
-        ORDER BY created_at DESC
-        LIMIT ?
-        """,
+        "SELECT * FROM recharge_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
         (user_id, limit)
     ).fetchall()
-
     return [dict(row) for row in rows]
