@@ -8,13 +8,11 @@ from services.dashboard_service import (
 
 dashboard_api_bp = Blueprint('dashboard_api', __name__)
 
-
 @dashboard_api_bp.route('/summary', methods=['GET'])
 @api_login_required
 def api_summary():
     summary = get_dashboard_summary(session['user_id'])
     return jsonify({'success': True, 'summary': summary}), 200
-
 
 @dashboard_api_bp.route('/health', methods=['GET'])
 @api_login_required
@@ -22,7 +20,6 @@ def api_get_health():
     limit = request.args.get('limit', 20, type=int)
     records = get_health_records(session['user_id'], limit)
     return jsonify({'success': True, 'records': records}), 200
-
 
 @dashboard_api_bp.route('/health', methods=['POST'])
 @api_login_required
@@ -37,20 +34,17 @@ def api_add_health():
     add_health_record(session['user_id'], weight, height, bp_sys, bp_dia, blood_type, notes)
     return jsonify({'success': True, 'message': 'Health record saved.'}), 201
 
-
 @dashboard_api_bp.route('/health/latest', methods=['GET'])
 @api_login_required
 def api_latest_health():
     record = get_latest_health_record(session['user_id'])
     return jsonify({'success': True, 'record': record}), 200
 
-
 @dashboard_api_bp.route('/requests', methods=['GET'])
 @api_login_required
 def api_get_requests():
     reqs = get_service_requests(session['user_id'])
     return jsonify({'success': True, 'requests': reqs}), 200
-
 
 @dashboard_api_bp.route('/requests', methods=['POST'])
 @api_login_required
@@ -69,13 +63,11 @@ def api_submit_request():
         return jsonify({'success': True, 'message': message}), 201
     return jsonify({'success': False, 'message': message}), 400
 
-
 @dashboard_api_bp.route('/requests/all', methods=['GET'])
 @api_admin_required
 def api_all_requests():
     reqs = get_all_service_requests()
     return jsonify({'success': True, 'requests': reqs}), 200
-
 
 @dashboard_api_bp.route('/requests/<int:req_id>/status', methods=['PUT'])
 @api_admin_required
