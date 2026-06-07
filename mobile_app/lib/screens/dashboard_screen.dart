@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -6,15 +7,20 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("FlexiHealth Dashboard"),
-        automaticallyImplyLeading: false, // লগইন পেজে ব্যাক করা বন্ধ করতে
-      ),
-      body: const Center(
-        child: Text(
-          "Welcome to your Dashboard!",
-          style: TextStyle(fontSize: 20),
-        ),
+      appBar: AppBar(title: const Text("Dashboard")),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: ApiService().getDashboardData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          } else if (snapshot.hasData) {
+            final data = snapshot.data!;
+            return Center(child: Text("Welcome, ${data['username']}"));
+          }
+          return const Center(child: Text("No Data"));
+        },
       ),
     );
   }
