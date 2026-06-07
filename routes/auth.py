@@ -37,7 +37,8 @@ def login():
             flash(f"Welcome {user.full_name}!", "success")
 
             if user.role == "admin":
-                return redirect(url_for("admin.panel"))
+                # অ্যাডমিন প্যানেলে যাওয়ার সঠিক রাউট আপডেট করা হলো
+                return redirect(url_for("admin.dashboard"))
             return redirect(url_for("dashboard.home"))
 
         flash("Invalid credentials.", "danger")
