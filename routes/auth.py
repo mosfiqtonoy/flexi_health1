@@ -9,13 +9,8 @@ from utils.db import get_db
 import secrets
 from datetime import datetime, timedelta
 
-
 auth_bp = Blueprint("auth", __name__)
 
-
-# =========================
-# LOGIN
-# =========================
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -50,23 +45,27 @@ def login():
     return render_template("auth/login.html")
 
 
-# =========================
-# REGISTER
-# =========================
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        full_name = request.form.get("full_name", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        phone = request.form.get("phone", "").strip()
+        full_name = request.form.get("name", "").strip()
+        identifier = request.form.get("identifier", "").strip().lower()
         password = request.form.get("password", "")
+        blood_group = request.form.get("blood_group", "")
+        dob = request.form.get("dob", "")
+        address = request.form.get("address", "").strip()
+        latitude = request.form.get("latitude", "")
+        longitude = request.form.get("longitude", "")
 
-        if not full_name or not email or not phone or len(password) < 8:
+        email = identifier if "@" in identifier else ""
+        phone = identifier if "@" not in identifier else ""
+
+        if not full_name or not identifier or len(password) < 8:
             flash("Invalid input data.", "danger")
             return render_template("auth/register.html")
 
         try:
-            if User.find_by_email(email) or User.find_by_phone(phone):
+            if (email and User.find_by_email(email)) or (phone and User.find_by_phone(phone)):
                 flash("User already exists.", "warning")
                 return render_template("auth/register.html")
 
@@ -74,10 +73,10 @@ def register():
             hashed = generate_password_hash(password)
             db.execute(
                 """
-                INSERT INTO users (full_name, email, phone, password_hash, role)
-                VALUES (?, ?, ?, ?, 'user')
+                INSERT INTO users (full_name, email, phone, password_hash, role, blood_group, date_of_birth, address, latitude, longitude)
+                VALUES (?, ?, ?, ?, 'user', ?, ?, ?, ?, ?)
                 """,
-                (full_name, email, phone, hashed)
+                (full_name, email, phone, hashed, blood_group, dob, address, latitude, longitude)
             )
             db.commit()
             flash("Account created successfully!", "success")
@@ -90,9 +89,6 @@ def register():
     return render_template("auth/register.html")
 
 
-# =========================
-# FORGOT PASSWORD
-# =========================
 @auth_bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -138,9 +134,6 @@ def forgot_password():
     return render_template("auth/forgot_password.html")
 
 
-# =========================
-# RESET PASSWORD
-# =========================
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
     db = get_db()
@@ -180,9 +173,6 @@ def reset_password(token):
     return render_template("auth/reset_password.html", token=token)
 
 
-# =========================
-# LOGOUT
-# =========================
 @auth_bp.route("/logout")
 def logout():
     session.clear()
